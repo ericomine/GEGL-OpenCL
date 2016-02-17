@@ -29,13 +29,55 @@
 #define GEGL_OP_POINT_FILTER
 #define GEGL_OP_C_SOURCE invert-gamma.c
 
+#define MAX_SOURCE_SIZE (0x100000)
+
 #include "gegl-op.h"
 
+#include "opencl/gegl-cl.h"
+#include "buffer/gegl-buffer-cl-iterator.h"
+#include "opencl/invert-gamma.cl.h"
+
+static GeglClRunData *cl_data = NULL;
+
+static gboolean
+cl_process (GeglOperation *operation,
+            GeglBuffer *input,
+	          GeglBuffer *output,
+            size_t global_worksize,
+	          const GeglRectangle *result)
+{
+  if (!cl_data) {
+    return TRUE;
+  }
+
+  cl_int cl_err = 0;
+    
+  gegl_cl_set_kernel_args (cl_data->kernel[0],
+                           sizeof(cl_mem), &input,
+                           sizeof(cl_mem), &output,
+                           NULL);
+
+  cl_err = gegl_clEnqueueNDRangeKernel(gegl_cl_get_command_queue(),
+                                       cl_data->kernel[0], 1,
+                                       NULL, &global_worksize, NULL,
+                                       0, NULL, NULL);
+
+  CL_CHECK;
+  return FALSE;
+
+error:
+  return TRUE;
+}
 static void
 prepare (GeglOperation *operation)
 {
   gegl_operation_set_format (operation, "input", babl_format ("R'G'B'A float"));
   gegl_operation_set_format (operation, "output", babl_format ("R'G'B'A float"));
+
+  if (!cl_data) {
+    const char *kernel_name[] = {"cl_invert_gamma", NULL};
+    cl_data = gegl_cl_compile_and_build(invert_gamma_cl_source, kernel_name);
+  }
 }
 
 static gboolean
@@ -71,17 +113,19 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class    = GEGL_OPERATION_CLASS (klass);
   point_filter_class = GEGL_OPERATION_POINT_FILTER_CLASS (klass);
 
+  operation_class->opencl_support = TRUE;
   operation_class->prepare     = prepare;
   point_filter_class->process  = process;
+  point_filter_class->cl_process = cl_process;
 
   gegl_operation_class_set_keys (operation_class,
     "name"       , "gegl:invert-gamma",
     "title",      _("Invert in Perceptual space"),
+    "compat-name", "gegl:invert-gamma",
     "categories" , "color",
     "description",
        _("Inverts the components (except alpha), the result is the "
          "corresponding \"negative\" image."),
     NULL);
 }
-
 #endif
