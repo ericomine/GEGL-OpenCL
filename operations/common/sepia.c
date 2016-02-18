@@ -51,13 +51,27 @@ cl_process (GeglOperation *operation,
     return TRUE;
   }
 
-  cl_int cl_err = 0;
-    
+  GeglProperties *o = GEGL_PROPERTIES (operation);
+  float s = o->scale;
+
+  cl_float4 coefs[3];
+  coefs[0] = { 0.393 + 0.607 * (1.0 - o->scale),
+               0.769 - 0.769 * (1.0 - o->scale),
+               0.189 - 0.189 * (1.0 - o->scale), 0.0 };
+  coefs[1] = { 0.349 - 0.349 * (1.0 - o->scale),
+               0.686 + 0.314 * (1.0 - o->scale),
+               0.168 - 0.168 * (1.0 - o->scale), 0.0 };
+  coefs[2] = { 0.272 - 0.272 * (1.0 - o->scale),
+               0.534 - 0.534 * (1.0 - o->scale),
+               0.131 + 0.869 * (1.0 - o->scale), 0.0 };
+
   gegl_cl_set_kernel_args (cl_data->kernel[0],
                            sizeof(cl_mem), &input,
                            sizeof(cl_mem), &output,
+                           3 * sizeof(cl_float4), &coefs,
                            NULL);
 
+  cl_int cl_err = 0;
   cl_err = gegl_clEnqueueNDRangeKernel(gegl_cl_get_command_queue(),
                                        cl_data->kernel[0], 1,
                                        NULL, &global_worksize, NULL,
@@ -69,7 +83,6 @@ cl_process (GeglOperation *operation,
 error:
   return TRUE;
 }
-static void
 
 static void prepare (GeglOperation *operation)
 {
@@ -83,6 +96,12 @@ static void prepare (GeglOperation *operation)
 
   gegl_operation_set_format (operation, "input", format);
   gegl_operation_set_format (operation, "output", format);
+
+  // Should this be skipped if there's no opencl support? Not skipping now.
+  if (!cl_data) {
+    const char *kernel_name[] = {"cl_sepia", NULL};
+    cl_data = gegl_cl_compile_and_build (sepia_cl_source, kernel_name);
+  }
 }
 
 static gboolean
