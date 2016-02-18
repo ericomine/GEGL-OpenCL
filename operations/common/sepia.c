@@ -35,6 +35,42 @@ property_boolean (srgb, _("sRGB"), TRUE)
 
 #include "gegl-op.h"
 
+#include "opencl/gegl-cl.h"
+#include "opencl/sepia.cl.h"
+
+static GeglClRunData *cl_data = NULL;
+
+static gboolean
+cl_process (GeglOperation *operation,
+            GeglBuffer *input,
+	          GeglBuffer *output,
+            size_t global_worksize,
+	          const GeglRectangle *result)
+{
+  if (!cl_data) {
+    return TRUE;
+  }
+
+  cl_int cl_err = 0;
+    
+  gegl_cl_set_kernel_args (cl_data->kernel[0],
+                           sizeof(cl_mem), &input,
+                           sizeof(cl_mem), &output,
+                           NULL);
+
+  cl_err = gegl_clEnqueueNDRangeKernel(gegl_cl_get_command_queue(),
+                                       cl_data->kernel[0], 1,
+                                       NULL, &global_worksize, NULL,
+                                       0, NULL, NULL);
+
+  CL_CHECK;
+  return FALSE;
+
+error:
+  return TRUE;
+}
+static void
+
 static void prepare (GeglOperation *operation)
 {
   GeglProperties *o = GEGL_PROPERTIES (operation);
@@ -101,9 +137,9 @@ gegl_op_class_init (GeglOpClass *klass)
     GEGL_OPERATION_POINT_FILTER_CLASS (klass);
 
   operation_class->prepare = prepare;
-  operation_class->opencl_support = FALSE;
-
+  operation_class->opencl_support = TRUE;
   point_filter_class->process = process;
+  point_filter_class->cl_process = cl_process;
 
   gegl_operation_class_set_keys (operation_class,
     "name"       , "gegl:sepia",
