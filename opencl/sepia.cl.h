@@ -1,7 +1,7 @@
 static const char* sepia_cl_source =
 "__kernel void cl_sepia(__global const float4 *in,                             \n"
 "                       __global       float4 *out,                            \n"
-"                                      float4 *coefs)                          \n"
+"                                      float4 *c)                              \n"
 "{                                                                             \n"
 "  int gid     = get_global_id(0);                                             \n"
 "  float4 in_v = in[gid];                                                      \n"

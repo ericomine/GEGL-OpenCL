@@ -1,6 +1,6 @@
 __kernel void cl_sepia(__global const float4 *in,
                        __global       float4 *out,
-                                      float4 *coefs)
+                                      float4 *c)
 {
   int gid     = get_global_id(0);
   float4 in_v = in[gid];
