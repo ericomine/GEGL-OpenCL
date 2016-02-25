@@ -54,21 +54,24 @@ cl_process (GeglOperation *operation,
   GeglProperties *o = GEGL_PROPERTIES (operation);
   float s = o->scale;
 
-  cl_float4 coefs[3];
-  coefs[0] = { 0.393 + 0.607 * (1.0 - o->scale),
-               0.769 - 0.769 * (1.0 - o->scale),
-               0.189 - 0.189 * (1.0 - o->scale), 0.0 };
-  coefs[1] = { 0.349 - 0.349 * (1.0 - o->scale),
-               0.686 + 0.314 * (1.0 - o->scale),
-               0.168 - 0.168 * (1.0 - o->scale), 0.0 };
-  coefs[2] = { 0.272 - 0.272 * (1.0 - o->scale),
-               0.534 - 0.534 * (1.0 - o->scale),
-               0.131 + 0.869 * (1.0 - o->scale), 0.0 };
+  cl_float c[12];
+  c[0] = 0.393 + 0.607 * (1.0 - o->scale);
+  c[1] = 0.769 - 0.769 * (1.0 - o->scale);
+  c[2] = 0.189 - 0.189 * (1.0 - o->scale);
+  c[3] = 0.0;
+  c[4] = 0.349 - 0.349 * (1.0 - o->scale);
+  c[5] = 0.686 + 0.314 * (1.0 - o->scale);
+  c[6] = 0.168 - 0.168 * (1.0 - o->scale);
+  c[7] = 0.0;
+  c[8] = 0.272 - 0.272 * (1.0 - o->scale);
+  c[9] = 0.534 - 0.534 * (1.0 - o->scale);
+  c[10] = 0.131 + 0.869 * (1.0 - o->scale);
+  c[11] = 0.0;
 
   gegl_cl_set_kernel_args (cl_data->kernel[0],
                            sizeof(cl_mem), &input,
                            sizeof(cl_mem), &output,
-                           3 * sizeof(cl_float4), &coefs,
+                           3 * sizeof(cl_float4), &c,
                            NULL);
 
   cl_int cl_err = 0;

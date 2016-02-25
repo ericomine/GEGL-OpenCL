@@ -1,0 +1,16 @@
+static const char* sepia_cl_source =
+"__kernel void cl_sepia(__global const float4 *in,                             \n"
+"                       __global       float4 *out,                            \n"
+"                                      float4 *coefs)                          \n"
+"{                                                                             \n"
+"  int gid     = get_global_id(0);                                             \n"
+"  float4 in_v = in[gid];                                                      \n"
+"                                                                              \n"
+"  float4 out_v;                                                               \n"
+"  out_v.x = dot(in_v, c[0]);                                                  \n"
+"  out_v.y = dot(in_v, c[1]);                                                  \n"
+"  out_v.z = dot(in_v, c[2]);                                                  \n"
+"  out_v.w = in_v.w;                                                           \n"
+"  out[gid] = out_v;                                                           \n"
+"}                                                                             \n"
+;
