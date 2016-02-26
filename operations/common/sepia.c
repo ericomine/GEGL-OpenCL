@@ -54,7 +54,7 @@ cl_process (GeglOperation *operation,
   GeglProperties *o = GEGL_PROPERTIES (operation);
   float s = o->scale;
 
-  cl_float c[12];
+  gfloat c[12];
   c[0] = 0.393 + 0.607 * (1.0 - o->scale);
   c[1] = 0.769 - 0.769 * (1.0 - o->scale);
   c[2] = 0.189 - 0.189 * (1.0 - o->scale);
@@ -68,13 +68,19 @@ cl_process (GeglOperation *operation,
   c[10] = 0.131 + 0.869 * (1.0 - o->scale);
   c[11] = 0.0;
 
+  cl_int cl_err = 0;
+
+  cl_mem c_in = gegl_clCreateBuffer(gegl_cl_get_context(),
+                                    CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                    12 * sizeof(cl_float),
+                                    (void*)&c, &cl_err);
+
   gegl_cl_set_kernel_args (cl_data->kernel[0],
                            sizeof(cl_mem), &input,
                            sizeof(cl_mem), &output,
-                           3 * sizeof(cl_float4), &c,
+                           12 * sizeof(gfloat), &c,
                            NULL);
 
-  cl_int cl_err = 0;
   cl_err = gegl_clEnqueueNDRangeKernel(gegl_cl_get_command_queue(),
                                        cl_data->kernel[0], 1,
                                        NULL, &global_worksize, NULL,
