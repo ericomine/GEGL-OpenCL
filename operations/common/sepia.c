@@ -54,7 +54,7 @@ cl_process (GeglOperation *operation,
   GeglProperties *o = GEGL_PROPERTIES (operation);
   float s = o->scale;
 
-  cl_float c[12];
+  gfloat c[12];
   c[0] = 0.393 + 0.607 * (1.0 - o->scale);
   c[1] = 0.769 - 0.769 * (1.0 - o->scale);
   c[2] = 0.189 - 0.189 * (1.0 - o->scale);
